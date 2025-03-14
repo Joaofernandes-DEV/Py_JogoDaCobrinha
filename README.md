@@ -57,6 +57,8 @@ Este projeto permitiu explorar:
 - **Detecção de colisão**: O jogo termina se a cobrinha bater nas paredes ou em si mesma.  
 - **Exibição de pontuação**: A pontuação é atualizada conforme a comida é consumida.  
 - **Tela de Game Over**: Indica o fim do jogo e permite reiniciar.  
+- **Sistema de Níveis**: Três níveis de dificuldade com velocidades diferentes.  
+- **Telas de Transição**: Telas personalizadas para cada nível e transição entre fases.  
 
 ---
 
@@ -82,6 +84,10 @@ Py_JogoDaCobrinha/
 │   ├── game over.png
 │   ├── Grama1.png
 │   ├── Inicio.png
+│   ├── nivel1.png
+│   ├── nivel2.png
+│   ├── nivel3.png
+│   ├── teladeescolha.png
 │
 ├── src/
 │   └── main.py                      # Código principal do jogo (caminho corrigido)
@@ -111,4 +117,4 @@ Py_JogoDaCobrinha/
 ---
 
 ## 📜 Licença  
-Este projeto está sob a licença MIT. Consulte [LICENSE](LICENSE) para mais detalhes.  
+Este projeto está sob a licença MIT. Consulte [LICENSE](LICENSE) para mais detalhes.
