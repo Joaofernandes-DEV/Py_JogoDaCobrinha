@@ -7,7 +7,7 @@ pygame.init()
 # Configurações
 LARGURA, ALTURA = 800, 600
 TAMANHO_BLOCO = 30
-VELOCIDADE = 15
+VELOCIDADES = {1: 8, 2: 12, 3: 16}  # Velocidades ajustadas (valores menores = mais lento)
 CORES = {'BRANCO': (255, 255, 255)}
 
 tela = pygame.display.set_mode((LARGURA, ALTURA))
@@ -31,6 +31,10 @@ def mostrar_texto(texto, tamanho, cor, x, y):
 tela_inicio_img = carregar_imagem("Inicio.png", (LARGURA, ALTURA))
 tela_game_over_img = carregar_imagem("game over.png", (LARGURA, ALTURA))
 tela_creditos_img = carregar_imagem("creditos.png", (LARGURA, ALTURA))
+tela_escolha_img = carregar_imagem("teladeescolha.png", (LARGURA, ALTURA))
+tela_nivel1_img = carregar_imagem("nivel1.png", (LARGURA, ALTURA))
+tela_nivel2_img = carregar_imagem("nivel2.png", (LARGURA, ALTURA))
+tela_nivel3_img = carregar_imagem("nivel3.png", (LARGURA, ALTURA))
 fundo = carregar_imagem("Grama1.png", (LARGURA, ALTURA))
 comida_img = carregar_imagem("comida.jpg", (TAMANHO_BLOCO, TAMANHO_BLOCO))
 
@@ -64,11 +68,11 @@ def tela_inicio():
                 return False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1: 
-                    return True   # Iniciar jogo
+                    return True
                 elif event.key == pygame.K_2: 
-                    tela_creditos()  # Mostrar créditos
+                    tela_creditos()
                 elif event.key == pygame.K_3: 
-                    return False  # Fechar jogo
+                    return False
 
 def tela_creditos():
     while True:
@@ -81,7 +85,7 @@ def tela_creditos():
                 return
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1: 
-                    return  # Voltar para tela inicial
+                    return
                 elif event.key == pygame.K_2: 
                     pygame.quit()
                     return
@@ -102,25 +106,39 @@ def tela_game_over(pontos):
                 elif event.key == pygame.K_2: 
                     tela_creditos()
                 elif event.key == pygame.K_3: 
-                    return 'menu'  # Alterado para retornar 'menu'
+                    return 'menu'
 
-def main():
+def tela_mudanca_fase():
     while True:
-        # Tela inicial
-        inicio = tela_inicio()
-        if not inicio:
-            break  # Fechar jogo
+        tela.blit(tela_escolha_img, (0, 0))  # Exibe apenas a imagem, sem texto adicional
+        pygame.display.update()
         
-        # Loop do jogo
-        while True:
-            pontuacao = jogo_principal()
-            resultado = tela_game_over(pontuacao)
-            
-            if resultado == 'reiniciar':
-                continue  # Reinicia o jogo
-            elif resultado == 'menu':
-                break  # Volta para o menu inicial
-            elif resultado == 'sair':
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return 'menu'
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_y:
+                    return 'sim'
+                elif event.key == pygame.K_n:
+                    return 'nao'
+                elif event.key == pygame.K_e:
+                    return 'menu'
+
+def mostrar_tela_nivel(nivel):
+    telas = {
+        1: tela_nivel1_img,
+        2: tela_nivel2_img,
+        3: tela_nivel3_img
+    }
+    
+    inicio = pygame.time.get_ticks()
+    while pygame.time.get_ticks() - inicio < 3000:  # Mostra por 3 segundos
+        tela.blit(telas[nivel], (0, 0))
+        pygame.display.update()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 pygame.quit()
                 return
 
@@ -193,6 +211,12 @@ def jogo_principal():
     comida = Comida(cobra.corpo)
     relogio = pygame.time.Clock()
     pontuacao = 0
+    current_level = 1
+    foods_eaten_in_level = 0
+    velocidade_jogo = VELOCIDADES[current_level]
+    
+    # Mostra tela do nível inicial
+    mostrar_tela_nivel(current_level)
     
     while True:
         for event in pygame.event.get():
@@ -232,34 +256,49 @@ def jogo_principal():
             comida.reposicionar(cobra.corpo)
             cobra.comprimento += 1
             pontuacao += 1
+            foods_eaten_in_level += 1
+
+            if current_level < 3 and foods_eaten_in_level >= 10:
+                resposta = tela_mudanca_fase()
+                if resposta == 'sim':
+                    current_level += 1
+                    foods_eaten_in_level = 0
+                    velocidade_jogo = VELOCIDADES[current_level]
+                    mostrar_tela_nivel(current_level)  # Mostra nova tela de nível
+                elif resposta == 'nao':
+                    foods_eaten_in_level = 0
+                elif resposta == 'menu':
+                    return None
         
         # Renderização
         tela.blit(fundo, (0, 0))
         mostrar_texto(f"Pontuação: {pontuacao}", 30, CORES['BRANCO'], 10, 10)
+        mostrar_texto(f"Nível: {current_level}", 30, CORES['BRANCO'], 10, 50)
         comida.desenhar()
         cobra.desenhar()
         pygame.display.update()
-        relogio.tick(VELOCIDADE)
+        relogio.tick(velocidade_jogo)
 
 def main():
     while True:
-        # Tela inicial
         inicio = tela_inicio()
         if not inicio:
-            break  # Fechar jogo
+            break
         
-        # Loop do jogo
         while True:
             pontuacao = jogo_principal()
+            if pontuacao is None:
+                break
+            
             resultado = tela_game_over(pontuacao)
             
             if resultado == 'reiniciar':
-                continue  # Reinicia o jogo
-            else:
-                break  # Sai ou volta ao menu
-            
-        if resultado == 'sair':
-            break  # Fecha o jogo totalmente
+                continue
+            elif resultado == 'menu':
+                break
+            elif resultado == 'sair':
+                pygame.quit()
+                return
 
     pygame.quit()
 
