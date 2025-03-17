@@ -37,6 +37,7 @@ tela_nivel2_img = carregar_imagem("nivel2.png", (LARGURA, ALTURA))
 tela_nivel3_img = carregar_imagem("nivel3.png", (LARGURA, ALTURA))
 fundo = carregar_imagem("Grama1.png", (LARGURA, ALTURA))
 comida_img = carregar_imagem("comida.jpg", (TAMANHO_BLOCO, TAMANHO_BLOCO))
+tela_fim_de_jogo_img = carregar_imagem("fim_de_jogo.png", (LARGURA, ALTURA))  # Nova tela
 
 class RecursosCobra:
     def __init__(self):
@@ -68,11 +69,17 @@ def tela_inicio():
                 return False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1: 
-                    return True
+                    return True  # Inicia o jogo normalmente
                 elif event.key == pygame.K_2: 
                     tela_creditos()
                 elif event.key == pygame.K_3: 
                     return False
+                # Comando escondido: pressionar 'n' e '3' juntos para iniciar no nível 3
+                elif event.key == pygame.K_n:
+                    # Verifica se a tecla '3' também está pressionada
+                    keys = pygame.key.get_pressed()
+                    if keys[pygame.K_4]:
+                        return 'nivel3'  # Retorna um valor especial para iniciar no nível 3
 
 def tela_creditos():
     while True:
@@ -123,6 +130,22 @@ def tela_mudanca_fase():
                 elif event.key == pygame.K_n:
                     return 'nao'
                 elif event.key == pygame.K_e:
+                    return 'menu'
+
+def tela_fim_de_jogo(pontos):
+    while True:
+        tela.blit(tela_fim_de_jogo_img, (0, 0))
+        mostrar_texto(f"Pontuação Final: {pontos}", 40, CORES['BRANCO'], 10, 10)
+        pygame.display.update()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return 'sair'
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1: 
+                    return 'reiniciar'
+                elif event.key == pygame.K_2: 
                     return 'menu'
 
 def mostrar_tela_nivel(nivel):
@@ -206,12 +229,12 @@ class Comida:
             if not colisao:
                 break
 
-def jogo_principal():
+def jogo_principal(nivel_inicial=1):
     cobra = Cobra()
     comida = Comida(cobra.corpo)
     relogio = pygame.time.Clock()
     pontuacao = 0
-    current_level = 1
+    current_level = nivel_inicial
     foods_eaten_in_level = 0
     velocidade_jogo = VELOCIDADES[current_level]
     
@@ -269,6 +292,21 @@ def jogo_principal():
                     foods_eaten_in_level = 0
                 elif resposta == 'menu':
                     return None
+            elif current_level == 3 and foods_eaten_in_level >= 10:
+                resposta = tela_fim_de_jogo(pontuacao)
+                if resposta == 'reiniciar':
+                    cobra.reset()
+                    current_level = 1
+                    foods_eaten_in_level = 0
+                    pontuacao = 0
+                    velocidade_jogo = VELOCIDADES[current_level]
+                    comida.reposicionar(cobra.corpo)
+                    mostrar_tela_nivel(current_level)
+                elif resposta == 'menu':
+                    return None
+                elif resposta == 'sair':
+                    pygame.quit()
+                    return
         
         # Renderização
         tela.blit(fundo, (0, 0))
@@ -282,11 +320,15 @@ def jogo_principal():
 def main():
     while True:
         inicio = tela_inicio()
-        if not inicio:
+        if inicio == 'nivel3':  # Comando escondido para iniciar no nível 3
+            nivel_inicial = 3
+        elif inicio:
+            nivel_inicial = 1
+        else:
             break
         
         while True:
-            pontuacao = jogo_principal()
+            pontuacao = jogo_principal(nivel_inicial)
             if pontuacao is None:
                 break
             
